@@ -1,0 +1,54 @@
+# ParaGen Configuration Example
+
+# Data Configuration
+data:
+  train_dataset: "both"  # 'qqp', 'paws', or 'both'
+  eval_datasets:
+    - "mrpc"
+    - "qqp"
+    - "twitter_ppdb"
+  data_dir: "./data"
+  batch_size: 32
+  max_source_length: 128
+  max_target_length: 128
+
+# Model Configuration
+model:
+  model_name: "t5-base"
+  num_beams: 5
+  diversity_penalty: 0.5
+
+# Training Configuration
+training:
+  num_epochs: 10
+  learning_rate: 0.1
+  warmup_steps: 500
+  device: "cuda"
+  checkpoint_dir: "./checkpoints"
+
+# Reranking Configuration
+reranker:
+  reranker_model: "sentence-transformers/all-MiniLM-L6-v2"
+  rerank_metric: "combined"  # 'cosine', 'bertscore', or 'combined'
+  lambda_weight: 0.6
+  num_candidates: 5
+
+# Evaluation Configuration
+evaluation:
+  eval_metrics:
+    - "sentence_bert_similarity"
+    - "bertscore"
+    - "inverse_bleu"
+    - "self_bleu"
+    - "lexical_diversity"
+    - "perplexity"
+    - "meteor"
+  human_eval_samples: 200
+  results_dir: "./results"
+
+# Attribute Configuration
+attributes:
+  length_tokens: ["[SHORT]", "[SAME]", "[LONG]"]
+  diversity_tokens: ["[CONSERVATIVE]", "[CREATIVE]"]
+  use_length_control: true
+  use_diversity_control: true

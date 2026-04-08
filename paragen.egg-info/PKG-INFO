@@ -1,0 +1,20 @@
+Metadata-Version: 2.4
+Name: paragen
+Version: 0.1.0
+Summary: ParaGen: Controllable Neural Paraphrase Generation with Semantic Preservation
+Requires-Python: >=3.7
+Requires-Dist: torch>=2.0.0
+Requires-Dist: transformers>=4.35.0
+Requires-Dist: datasets>=2.14.0
+Requires-Dist: numpy>=1.24.3
+Requires-Dist: pandas>=2.0.3
+Requires-Dist: scikit-learn>=1.3.0
+Requires-Dist: nltk>=3.8.1
+Requires-Dist: sentence-transformers>=2.2.2
+Requires-Dist: rouge-score>=0.1.2
+Requires-Dist: scipy>=1.11.2
+Requires-Dist: tqdm>=4.66.1
+Requires-Dist: pyyaml>=6.0
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
