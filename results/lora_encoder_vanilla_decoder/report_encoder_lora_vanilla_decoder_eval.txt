@@ -1,0 +1,187 @@
+====================================================================================================
+PARAPHRASE EVALUATION REPORT
+Model: lora_encoder_vanilla_decoder
+Number of samples: 2228
+Evaluation mode: Against reference paraphrases
+====================================================================================================
+
+SUMMARY METRICS
+----------------------------------------------------------------------------------------------------
+sentence_bert_similarity_mean.....................     0.8908
+sentence_bert_similarity_std......................     0.1638
+sentence_bert_similarity_median...................     0.9401
+inverse_bleu_mean.................................     0.6837
+inverse_bleu_std..................................     0.2211
+inverse_bleu_median...............................     0.6583
+lexical_diversity_ratio_mean......................     0.4208
+lexical_diversity_ratio_std.......................     0.1694
+lexical_diversity_ratio_median....................     0.3929
+perplexity_mean...................................        inf
+perplexity_std....................................        nan
+perplexity_median.................................        inf
+meteor_mean.......................................     0.6433
+meteor_std........................................     0.1957
+meteor_median.....................................     0.6915
+para_score_mean...................................     0.8287
+para_score_std....................................     0.1101
+para_score_median.................................     0.8391
+
+DETAILED METRIC STATISTICS
+----------------------------------------------------------------------------------------------------
+
+sentence_bert_similarity:
+  Mean:   0.8908
+  Std:    0.1638
+  Min:    -0.0972
+  Max:    1.0000
+  Median: 0.9401
+
+inverse_bleu:
+  Mean:   0.6837
+  Std:    0.2211
+  Min:    0.0878
+  Max:    1.0000
+  Median: 0.6583
+
+lexical_diversity_ratio:
+  Mean:   0.4208
+  Std:    0.1694
+  Min:    0.0000
+  Max:    1.0000
+  Median: 0.3929
+
+perplexity:
+  Mean:   inf
+  Std:    nan
+  Min:    inf
+  Max:    inf
+  Median: inf
+
+meteor:
+  Mean:   0.6433
+  Std:    0.1957
+  Min:    0.0000
+  Max:    0.9939
+  Median: 0.6915
+
+para_score:
+  Mean:   0.8287
+  Std:    0.1101
+  Min:    0.2320
+  Max:    1.0000
+  Median: 0.8391
+
+====================================================================================================
+SAMPLE PREDICTIONS (First 10)
+====================================================================================================
+
+Sample 1:
+  Source:    The Giro 's mountainous stage 20 began on the slopes of Les Deux Alpes and the ...
+  Reference: The mountainous stage 20 of the Giro ended on the slopes of Les Deux Alpes and ...
+  Generated: The Giro 's mountainous stage 20 began on the slopes of Les Deux Alpes and the p...
+  sentence_bert_similarity: 0.9714
+  inverse_bleu: 0.6018
+  lexical_diversity_ratio: 0.3913
+  perplexity: inf
+  meteor: 0.7670
+  para_score: 0.8605
+
+Sample 2:
+  Source:    Thiago is the father of current players Mazinho by Inter Milan and Rafinha of Ba...
+  Reference: Thiago is the father of current players Mazinho of Inter Milan and Rafinha of Ba...
+  Generated: Thiago is the father of current players by Inter Milan and Rafinha of Bayern Mun...
+  sentence_bert_similarity: 0.9285
+  inverse_bleu: 0.3225
+  lexical_diversity_ratio: 0.2500
+  perplexity: inf
+  meteor: 0.8057
+  para_score: 0.7467
+
+Sample 3:
+  Source:    " Sidewalk " magazine helped to create the careers of characters such as Olly To...
+  Reference: " Sidewalk " Magazine has helped spawn the careers of characters such as Brian S...
+  Generated:            
+  sentence_bert_similarity: 0.0521
+  inverse_bleu: 1.0000
+  lexical_diversity_ratio: 1.0000
+  perplexity: inf
+  meteor: 0.0000
+  para_score: 0.3365
+
+Sample 4:
+  Source:    Ecologically appropriate economically sustainable politically sensitive and f...
+  Reference: " Politically sensitive economically appropriate ecologically sustainable and ...
+  Generated: Ecologically appropriate and socially socially just " no references or sources a...
+  sentence_bert_similarity: 0.8480
+  inverse_bleu: 0.8222
+  lexical_diversity_ratio: 0.5000
+  perplexity: inf
+  meteor: 0.5351
+  para_score: 0.8403
+
+Sample 5:
+  Source:    The winning Mike McEwen team represented Ottawa at the 2016 Tim Hortons Brier in...
+  Reference: The winning team from Mike McEwen represented Ottawa in the Tim Hortons Brier 20...
+  Generated: The winning team represented Ottawa at the 2016 Tim Hortons Brier in Manitoba.
+  sentence_bert_similarity: 0.9301
+  inverse_bleu: 1.0000
+  lexical_diversity_ratio: 0.3750
+  perplexity: inf
+  meteor: 0.6438
+  para_score: 0.9511
+
+Sample 6:
+  Source:    The bill is black the eyes cere the legs and feet are yellow
+  Reference: The bill is yellow the eyes cere legs and feet are black
+  Generated: The bill is black, the eyes, the legs and feet are yellow.
+  sentence_bert_similarity: 0.9539
+  inverse_bleu: 0.6830
+  lexical_diversity_ratio: 0.5000
+  perplexity: inf
+  meteor: 0.6250
+  para_score: 0.8726
+
+Sample 7:
+  Source:    It was this title that Lancelot Brenton inherited ( his elder brother John Jerv...
+  Reference: It was this title that John Jervis Brenton ( his elder brother Lancelot Brenton ...
+  Generated: It was this title that Lancelot Brenton inherited ( his elder brother John Jervi...
+  sentence_bert_similarity: 0.9624
+  inverse_bleu: 0.5159
+  lexical_diversity_ratio: 0.2105
+  perplexity: inf
+  meteor: 0.8655
+  para_score: 0.8285
+
+Sample 8:
+  Source:    " Mound City " was sold at auction at Tuscumbia to W. K. Adams on 29 November 1...
+  Reference: " Tuscumbia " was sold on November 29 1865 at an auction in Mound City to W. K....
+  Generated: Mound City was sold at auction at Tuscumbia to W. K. Adams on 29 November 1865.
+  sentence_bert_similarity: 0.9155
+  inverse_bleu: 1.0000
+  lexical_diversity_ratio: 0.4286
+  perplexity: inf
+  meteor: 0.5466
+  para_score: 0.9409
+
+Sample 9:
+  Source:    It was owned locally by Walter Stiles ' Albert M. Cadwell
+  Reference: It was locally owned by Walter Stiles & Albert M. Cadwell
+  Generated: It was owned locally by Walter Stiles ' Albert M. Cadwell.
+  sentence_bert_similarity: 0.9377
+  inverse_bleu: 1.0000
+  lexical_diversity_ratio: 0.3077
+  perplexity: inf
+  meteor: 0.7480
+  para_score: 0.9564
+
+Sample 10:
+  Source:    In January 1967 Daltoni won second place at the first guitar festival of Belgra...
+  Reference: In January 1967 Daltoni won first place at the second Belgrade Guitar Festival
+  Generated: In January 1967 Daltoni won second place at the first guitar festival of Belgrad...
+  sentence_bert_similarity: 0.9934
+  inverse_bleu: 1.0000
+  lexical_diversity_ratio: 0.3125
+  perplexity: inf
+  meteor: 0.7315
+  para_score: 0.9954
+
