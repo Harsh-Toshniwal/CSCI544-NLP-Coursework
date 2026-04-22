@@ -145,7 +145,7 @@ class ParaphraseEvaluator:
             return float("inf")  # Default to infinity if computation fails
 
     def compute_para_score(
-        self, semantic_similarity: float, diversity: float, weight: float = 0.7
+        self, semantic_similarity: float, diversity: float, weight: float = 0.6
     ) -> float:
         """
         Compute ParaScore = weight * semantic_similarity + (1-weight) * diversity
