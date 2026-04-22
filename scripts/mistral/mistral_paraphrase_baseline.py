@@ -1,24 +1,24 @@
-"""Zero-shot and few-shot Mistral paraphrase baselines."""
+"""
+Mistral baseline paraphrase generator and evaluator
+Generates zero-shot paraphrases for sentences in a CSV file and evaluates them
+"""
 
 import argparse
 import json
 import logging
 import math
-import sys
-from collections import defaultdict
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
 import torch
 from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 from rouge_score import rouge_scorer
-from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers.utils import logging as transformers_logging
+from tqdm import tqdm
 
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -27,149 +27,20 @@ from paragen.evaluation import ParaphraseEvaluator
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-for noisy_logger in [
-    "httpx",
-    "httpcore",
-    "huggingface_hub",
-    "sentence_transformers",
-    "sentence_transformers.base.model",
-]:
+# Suppress noisy loggers
+for noisy_logger in ["httpx", "httpcore", "huggingface_hub", "sentence_transformers"]:
     logging.getLogger(noisy_logger).setLevel(logging.WARNING)
-transformers_logging.set_verbosity_error()
-
-DEFAULT_MODEL = "mistral"
-DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def normalize_model_name(model_name):
-    aliases = {
-        "mistral": DEFAULT_MODEL,
-        "mistral7b": DEFAULT_MODEL,
-        "mistral7b-instruct": DEFAULT_MODEL,
-        "mistral-7b-instruct": DEFAULT_MODEL,
-    }
-    return aliases.get(model_name.lower(), model_name)
-
-
-def clean_text(text):
-    return str(text).replace("\x01", " ").strip()
-
-
-def load_test_rows(test_file, positive_only=True, limit=None):
-    df = pd.read_csv(test_file).dropna(subset=["source", "target"])
-    if positive_only and "label" in df.columns:
-        df = df[df["label"] == 1]
-    if limit is not None:
-        df = df.head(limit)
-    return df.reset_index(drop=True)
-
-
-def build_few_shot_examples(df, examples_per_combo=3):
-    examples = defaultdict(list)
-    if not {"style_label", "length_label"}.issubset(df.columns):
-        return examples
-
-    pool = df
-    if "label" in pool.columns:
-        pool = pool[pool["label"] == 1]
-
-    for _, row in pool.iterrows():
-        key = (str(row["style_label"]), str(row["length_label"]))
-        if len(examples[key]) >= examples_per_combo:
-            continue
-        examples[key].append(
-            {
-                "source": clean_text(row["source"]),
-                "target": clean_text(row["target"]),
-                "style_label": str(row["style_label"]),
-                "length_label": str(row["length_label"]),
-            }
-        )
-    return examples
-
-
-def row_attributes(row):
-    style = str(row["style_label"]) if "style_label" in row and pd.notna(row["style_label"]) else "unspecified"
-    length = str(row["length_label"]) if "length_label" in row and pd.notna(row["length_label"]) else "unspecified"
-    return style, length
-
-
-def make_zero_shot_messages(row):
-    style, length = row_attributes(row)
-    source = clean_text(row["source"])
-    system = (
-        "You are a careful paraphrase generator. Return only one paraphrased sentence. "
-        "Preserve the meaning, avoid copying the wording too closely, and do not explain."
-    )
-    user = (
-        "Rewrite the sentence as a paraphrase.\n"
-        f"Style label: {style}\n"
-        f"Target length label: {length}\n"
-        f"Sentence: {source}\n"
-        "Paraphrase:"
-    )
-    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
-
-
-def make_few_shot_messages(row, examples):
-    style, length = row_attributes(row)
-    key = (style, length)
-    selected = examples.get(key) or examples.get(("CONSERVATIVE", "SAME")) or []
-    source = clean_text(row["source"])
-
-    system = (
-        "You are a careful paraphrase generator. Return only one paraphrased sentence. "
-        "Preserve the meaning, avoid copying the wording too closely, and do not explain."
-    )
-    messages = [{"role": "system", "content": system}]
-    for example in selected:
-        messages.append(
-            {
-                "role": "user",
-                "content": (
-                    "Rewrite the sentence as a paraphrase.\n"
-                    f"Style label: {example['style_label']}\n"
-                    f"Target length label: {example['length_label']}\n"
-                    f"Sentence: {example['source']}\n"
-                    "Paraphrase:"
-                ),
-            }
-        )
-        messages.append({"role": "assistant", "content": example["target"]})
-
-    messages.append(
-        {
-            "role": "user",
-            "content": (
-                "Rewrite the sentence as a paraphrase.\n"
-                f"Style label: {style}\n"
-                f"Target length label: {length}\n"
-                f"Sentence: {source}\n"
-                "Paraphrase:"
-            ),
-        }
-    )
-    return messages
-
-
-def load_model(model_name, dtype="auto"):
-    model_name = normalize_model_name(model_name)
-    
-    # If it's an alias, resolve to the actual checkpoint path
-    if model_name == DEFAULT_MODEL or model_name == "mistral":
-        # Compute path from script location (scripts/mistral/mistral_paraphrase_baseline.py)
-        model_path = Path(__file__).resolve().parents[2] / "checkpoints" / "mistral7binstruct"
-    else:
-        model_path = Path(model_name)
-    
-    model_path = model_path.resolve()
+def load_model():
+    """Load Mistral model from local checkpoint"""
+    model_path = Path(__file__).resolve().parent / "checkpoints" / "mistral7binstruct"
     logger.info(f"Loading model from: {model_path}")
     
     tokenizer = AutoTokenizer.from_pretrained(str(model_path), trust_remote_code=True, local_files_only=True)
-    torch_dtype = "auto" if dtype == "auto" else getattr(torch, dtype)
     model = AutoModelForCausalLM.from_pretrained(
         str(model_path),
-        torch_dtype=torch_dtype,
+        torch_dtype="auto",
         device_map="auto" if torch.cuda.is_available() else None,
         trust_remote_code=True,
         local_files_only=True,
@@ -178,246 +49,262 @@ def load_model(model_name, dtype="auto"):
     return tokenizer, model
 
 
-def generate_one(tokenizer, model, messages, max_new_tokens=96, temperature=0.2, top_p=0.9):
+def generate_paraphrase(tokenizer, model, source_text, max_new_tokens=96):
+    """Generate a zero-shot paraphrase for the source text"""
+    system = (
+        "You are a careful paraphrase generator. Return only one paraphrased sentence. "
+        "Preserve the meaning, avoid copying the wording too closely, and do not explain."
+    )
+    user = f"Rewrite the sentence as a paraphrase.\nSentence: {source_text}\nParaphrase:"
+    
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+    
     prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    
     with torch.no_grad():
         output_ids = model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
-            do_sample=temperature > 0,
-            temperature=temperature,
-            top_p=top_p,
+            do_sample=True,
+            temperature=0.2,
+            top_p=0.9,
             pad_token_id=tokenizer.eos_token_id,
         )
+    
     generated = output_ids[0, inputs["input_ids"].shape[-1] :]
-    return tokenizer.decode(generated, skip_special_tokens=True).strip()
+    paraphrase = tokenizer.decode(generated, skip_special_tokens=True).strip()
+    return paraphrase
 
 
-def load_similarity_model():
-    try:
-        from sentence_transformers import SentenceTransformer
-        
-        # Try loading from local checkpoint first
-        local_model_path = Path(__file__).resolve().parents[2] / "checkpoints" / "sentence-transformers"
-        if local_model_path.exists():
-            logger.info(f"Loading similarity model from local checkpoint: {local_model_path}")
-            return SentenceTransformer(str(local_model_path), trust_remote_code=True)
-        else:
-            # Fall back to downloading from HuggingFace
-            logger.info("Local similarity model not found, attempting to download from HuggingFace")
-            return SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    except Exception as e:
-        logger.warning(f"sentence-transformers failed to load: {e}; semantic similarity will be skipped")
-        return None
-
-
-def compute_semantic_similarities(similarity_model, sources, predictions, batch_size=32):
-    if similarity_model is None:
-        return [None] * len(sources)
-
-    source_embeddings = similarity_model.encode(
-        sources,
-        batch_size=batch_size,
-        convert_to_tensor=True,
-        show_progress_bar=False,
-    )
-    prediction_embeddings = similarity_model.encode(
-        predictions,
-        batch_size=batch_size,
-        convert_to_tensor=True,
-        show_progress_bar=False,
-    )
-    similarities = torch.nn.functional.cosine_similarity(source_embeddings, prediction_embeddings)
-    return [safe_float(value) for value in similarities.detach().cpu().tolist()]
-
-
-def safe_float(value):
-    if isinstance(value, (np.floating, float)) and (math.isnan(value) or math.isinf(value)):
-        return None
-    return float(value)
-
-
-def evaluate_generation(sources, predictions, references, similarity_model=None):
+def evaluate_paraphrase(source, reference, paraphrase):
+    """Evaluate the generated paraphrase with all metrics vs source and vs reference"""
     scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
     smoother = SmoothingFunction().method1
-    semantic_similarities = compute_semantic_similarities(similarity_model, sources, predictions)
-
-    rows = []
-    for source, prediction, reference, semantic_similarity in zip(
-        sources,
-        predictions,
-        references,
-        semantic_similarities,
-    ):
-        ref_tokens = reference.lower().split()
-        pred_tokens = prediction.lower().split()
-        bleu = sentence_bleu([ref_tokens], pred_tokens, smoothing_function=smoother) if pred_tokens else 0.0
-        rouge_l = scorer.score(reference, prediction)["rougeL"].fmeasure
-        source_tokens = set(source.lower().split())
-        pred_token_set = set(prediction.lower().split())
-        union = source_tokens | pred_token_set
-        lexical_diversity = 1.0 - (len(source_tokens & pred_token_set) / len(union)) if union else 0.0
-        inverse_bleu_vs_source = (
-            1.0
-            - sentence_bleu(
-                [source.lower().split()],
-                pred_tokens,
-                smoothing_function=smoother,
-            )
-            if pred_tokens
-            else 1.0
-        )
-        length_ratio = len(pred_tokens) / max(1, len(ref_tokens))
-
-        rows.append(
-            {
-                "source": source,
-                "reference": reference,
-                "prediction": prediction,
-                "bleu_vs_reference": bleu,
-                "rougeL_f1_vs_reference": rouge_l,
-                "lexical_diversity_vs_source": lexical_diversity,
-                "inverse_bleu_vs_source": inverse_bleu_vs_source,
-                "length_ratio_vs_reference": length_ratio,
-                "semantic_similarity_vs_source": semantic_similarity,
-            }
-        )
-
-    semantic_values = [
-        row["semantic_similarity_vs_source"]
-        for row in rows
-        if row["semantic_similarity_vs_source"] is not None
-    ]
-    summary = {
-        "num_samples": len(rows),
-        "mean_bleu_vs_reference": safe_float(np.mean([row["bleu_vs_reference"] for row in rows])),
-        "mean_rougeL_f1_vs_reference": safe_float(np.mean([row["rougeL_f1_vs_reference"] for row in rows])),
-        "mean_lexical_diversity_vs_source": safe_float(np.mean([row["lexical_diversity_vs_source"] for row in rows])),
-        "mean_inverse_bleu_vs_source": safe_float(np.mean([row["inverse_bleu_vs_source"] for row in rows])),
-        "mean_length_ratio_vs_reference": safe_float(np.mean([row["length_ratio_vs_reference"] for row in rows])),
-        "mean_semantic_similarity_vs_source": safe_float(np.mean(semantic_values)) if semantic_values else None,
-    }
-    return rows, summary
-
-
-def evaluate_with_paragen(sources, predictions):
+    
+    # Compute semantic similarity for both pairs
     evaluator = ParaphraseEvaluator()
-    all_scores, summary = evaluator.evaluate_batch(sources, predictions, compute_all=True)
+    semantic_similarity_vs_source = evaluator.compute_bert_score_similarity(source, paraphrase)
+    semantic_similarity_vs_reference = evaluator.compute_bert_score_similarity(reference, paraphrase)
+    
+    # Tokenize all texts
+    ref_tokens = reference.lower().split()
+    source_tokens_list = source.lower().split()
+    pred_tokens = paraphrase.lower().split()
+    
+    # Metrics vs reference
+    bleu_vs_reference = sentence_bleu([ref_tokens], pred_tokens, smoothing_function=smoother) if pred_tokens else 0.0
+    rouge_l_vs_reference = scorer.score(reference, paraphrase)["rougeL"].fmeasure
+    length_ratio_vs_reference = len(pred_tokens) / max(1, len(ref_tokens))
+    
+    source_token_set = set(source_tokens_list)
+    pred_token_set = set(pred_tokens)
+    ref_token_set = set(ref_tokens)
+    
+    # Lexical diversity metrics
+    union_source = source_token_set | pred_token_set
+    lexical_diversity_vs_source = 1.0 - (len(source_token_set & pred_token_set) / len(union_source)) if union_source else 0.0
+    
+    union_reference = ref_token_set | pred_token_set
+    lexical_diversity_vs_reference = 1.0 - (len(ref_token_set & pred_token_set) / len(union_reference)) if union_reference else 0.0
+    
+    # Inverse BLEU metrics
+    inverse_bleu_vs_source = (
+        1.0
+        - sentence_bleu(
+            [source_tokens_list],
+            pred_tokens,
+            smoothing_function=smoother,
+        )
+        if pred_tokens
+        else 1.0
+    )
+    
+    inverse_bleu_vs_reference = (
+        1.0
+        - sentence_bleu(
+            [ref_tokens],
+            pred_tokens,
+            smoothing_function=smoother,
+        )
+        if pred_tokens
+        else 1.0
+    )
+    
+    # ROUGE-L vs source
+    rouge_l_vs_source = scorer.score(source, paraphrase)["rougeL"].fmeasure
+    
+    # Length ratio vs source
+    length_ratio_vs_source = len(pred_tokens) / max(1, len(source_tokens_list))
+    
+    # BLEU vs source
+    bleu_vs_source = sentence_bleu([source_tokens_list], pred_tokens, smoothing_function=smoother) if pred_tokens else 0.0
+    
     return {
-        "num_samples": len(sources),
-        "summary": summary,
-        "detailed_scores": {metric: scores for metric, scores in all_scores.items()},
+        # Metrics vs reference
+        "bleu_vs_reference": float(bleu_vs_reference),
+        "rougeL_f1_vs_reference": float(rouge_l_vs_reference),
+        "lexical_diversity_vs_reference": float(lexical_diversity_vs_reference),
+        "inverse_bleu_vs_reference": float(inverse_bleu_vs_reference),
+        "length_ratio_vs_reference": float(length_ratio_vs_reference),
+        "semantic_similarity_vs_reference": float(semantic_similarity_vs_reference),
+        # Metrics vs source
+        "bleu_vs_source": float(bleu_vs_source),
+        "rougeL_f1_vs_source": float(rouge_l_vs_source),
+        "lexical_diversity_vs_source": float(lexical_diversity_vs_source),
+        "inverse_bleu_vs_source": float(inverse_bleu_vs_source),
+        "length_ratio_vs_source": float(length_ratio_vs_source),
+        "semantic_similarity_vs_source": float(semantic_similarity_vs_source),
     }
 
 
-def run_baseline(
-    test_file,
-    output_dir,
-    model_name=DEFAULT_MODEL,
-    modes=None,
-    examples_per_combo=3,
-    positive_only=True,
-    limit=None,
-    max_new_tokens=96,
-    temperature=0.2,
-    top_p=0.9,
-    dtype="auto",
-):
-    modes = modes or ["zero_shot", "few_shot"]
+def load_csv(csv_path, limit=None):
+    """Load CSV file with source sentences"""
+    df = pd.read_csv(csv_path).dropna(subset=["source"])
+    if limit is not None:
+        df = df.head(limit)
+    return df
+
+
+def process_csv(csv_path, output_dir="results/mistral_paraphrase_baseline", limit=None):
+    """Process CSV file and generate paraphrases with evaluations"""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Load model
+    print("\n" + "=" * 80)
+    print("Loading Mistral model...")
+    print("=" * 80)
+    tokenizer, model = load_model()
+    print("✓ Model loaded successfully\n")
+    
+    # Load CSV
+    logger.info(f"Loading CSV from: {csv_path}")
+    df = load_csv(csv_path, limit=limit)
+    logger.info(f"Loaded {len(df)} sentences")
+    
+    # Process each sentence
+    results = []
+    all_scores = {}
+    
+    print("=" * 80)
+    print(f"Processing {len(df)} sentences...")
+    print("=" * 80)
+    
+    for idx, row in tqdm(df.iterrows(), total=len(df), desc="Processing"):
+        source = str(row["source"]).strip()
+        
+        # Get reference/target if available, otherwise use source as fallback
+        if "target" in row:
+            reference = str(row["target"]).strip()
+        elif "reference" in row:
+            reference = str(row["reference"]).strip()
+        else:
+            reference = source  # Fallback to source
+        
+        # Generate paraphrase
+        paraphrase = generate_paraphrase(tokenizer, model, source)
+        
+        # Evaluate with reference
+        scores = evaluate_paraphrase(source, reference, paraphrase)
+        
+        # Store results
+        result = {
+            "source": source,
+            "reference": reference,
+            "prediction": paraphrase,
+        }
+        
+        # Add scores to result
+        for metric, score in scores.items():
+            result[metric] = score
+            if metric not in all_scores:
+                all_scores[metric] = []
+            all_scores[metric].append(score)
+        
+        # Add any additional columns from CSV
+        for col in df.columns:
+            if col not in ["source", "target", "reference"] and col in row:
+                result[col] = row[col]
+        
+        results.append(result)
+    
+    # Save results
+    results_df = pd.DataFrame(results)
+    results_file = output_dir / "mistral_paraphrase_results.csv"
+    results_df.to_csv(results_file, index=False)
+    logger.info(f"Saved results to {results_file}")
+    
+    # Save detailed metrics as JSON (list of objects)
+    detailed_metrics_json = output_dir / "mistral_paraphrase_detailed_metrics.json"
+    with open(detailed_metrics_json, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+    logger.info(f"Saved detailed metrics JSON to {detailed_metrics_json}")
+    
+    # Compute and save summary statistics with detailed scores
+    summary = {}
+    for metric, scores in all_scores.items():
+        valid_scores = [s for s in scores if isinstance(s, (int, float)) and not np.isnan(s)]
+        if valid_scores:
+            summary[f"{metric}_mean"] = float(np.mean(valid_scores))
+            summary[f"{metric}_std"] = float(np.std(valid_scores))
+            summary[f"{metric}_median"] = float(np.median(valid_scores))
+    
+    # Convert detailed scores to JSON-serializable format
+    detailed_scores = {}
+    for metric, scores in all_scores.items():
+        detailed_scores[metric] = [float(s) if isinstance(s, (int, float)) else s for s in scores]
+    
+    # Create summary results object with both summary and detailed scores
+    summary_results = {
+        "num_samples": len(results),
+        "summary": summary,
+        "detailed_scores": detailed_scores,
+    }
+    
+    summary_file = output_dir / "mistral_paraphrase_summary.json"
+    with open(summary_file, "w", encoding="utf-8") as f:
+        json.dump(summary_results, f, indent=2)
+    logger.info(f"Saved summary with detailed scores to {summary_file}")
+    
+    # Print summary
+    print("\n" + "=" * 80)
+    print("EVALUATION SUMMARY")
+    print("=" * 80)
+    for metric, value in summary.items():
+        if isinstance(value, float):
+            print(f"  {metric}: {value:.4f}")
+        else:
+            print(f"  {metric}: {value}")
+    print("=" * 80)
 
-    df = load_test_rows(test_file, positive_only=positive_only, limit=limit)
-    examples = build_few_shot_examples(pd.read_csv(test_file).dropna(subset=["source", "target"]), examples_per_combo)
-    tokenizer, model = load_model(model_name, dtype=dtype)
-    similarity_model = load_similarity_model()
 
-    with open(output_dir / "few_shot_examples.json", "w", encoding="utf-8") as f:
-        json.dump({f"{k[0]}|{k[1]}": v for k, v in examples.items()}, f, indent=2, ensure_ascii=False)
-
-    for mode in modes:
-        rows = []
-        logger.info("Running %s on %s rows", mode, len(df))
-        for _, row in tqdm(df.iterrows(), total=len(df), desc="Rows"):
-            messages = make_zero_shot_messages(row) if mode == "zero_shot" else make_few_shot_messages(row, examples)
-            prediction = generate_one(
-                tokenizer,
-                model,
-                messages,
-                max_new_tokens=max_new_tokens,
-                temperature=temperature,
-                top_p=top_p,
-            )
-            rows.append(
-                {
-                    "source": clean_text(row["source"]),
-                    "reference": clean_text(row["target"]),
-                    "prediction": prediction,
-                    "mode": mode,
-                    "style_label": row.get("style_label", ""),
-                    "length_label": row.get("length_label", ""),
-                    "label": row.get("label", ""),
-                    "combo_label": row.get("combo_label", ""),
-                }
-            )
-
-        output_file = output_dir / f"mistral_{mode}_predictions.csv"
-        pd.DataFrame(rows).to_csv(output_file, index=False)
-        logger.info("Saved %s", output_file)
-
-        metric_rows, metric_summary = evaluate_generation(
-            sources=[row["source"] for row in rows],
-            predictions=[row["prediction"] for row in rows],
-            references=[row["reference"] for row in rows],
-            similarity_model=similarity_model,
-        )
-        metrics_file = output_dir / f"mistral_{mode}_evaluation.json"
-        detailed_metrics_file = output_dir / f"mistral_{mode}_detailed_metrics.csv"
-        with open(metrics_file, "w", encoding="utf-8") as f:
-            json.dump(metric_summary, f, indent=2, ensure_ascii=False)
-        pd.DataFrame(metric_rows).to_csv(detailed_metrics_file, index=False)
-        logger.info("Saved %s", metrics_file)
-        logger.info("Saved %s", detailed_metrics_file)
-
-        paragen_metrics = evaluate_with_paragen(
-            sources=[row["source"] for row in rows],
-            predictions=[row["prediction"] for row in rows],
-        )
-        paragen_metrics_file = output_dir / f"mistral_{mode}_paragen_evaluation.json"
-        with open(paragen_metrics_file, "w", encoding="utf-8") as f:
-            json.dump(paragen_metrics, f, indent=2, ensure_ascii=False)
-        logger.info("Saved %s", paragen_metrics_file)
-
-
-def build_parser():
-    parser = argparse.ArgumentParser("Run Mistral zero-shot/few-shot paraphrase baselines")
-    parser.add_argument("--test-file", default="data/classification_splits/test.csv")
-    parser.add_argument("--output-dir", default="results/mistral_paraphrase_baseline")
-    parser.add_argument("--model", default=DEFAULT_MODEL)
-    parser.add_argument("--modes", nargs="+", default=["zero_shot", "few_shot"], choices=["zero_shot", "few_shot"])
-    parser.add_argument("--examples-per-combo", type=int, default=3)
-    parser.add_argument("--limit", type=int, default=None, help="Optional quick-run row limit")
-    parser.add_argument("--all-labels", action="store_true", help="Use all test rows instead of only label=1 rows")
-    parser.add_argument("--max-new-tokens", type=int, default=96)
-    parser.add_argument("--temperature", type=float, default=0.2)
-    parser.add_argument("--top-p", type=float, default=0.9)
-    parser.add_argument("--dtype", default="auto", choices=["auto", "float16", "bfloat16", "float32"])
-    return parser
+def main():
+    parser = argparse.ArgumentParser("Mistral paraphrase baseline generator and evaluator")
+    parser.add_argument(
+        "--csv-path",
+        default="data/classification_splits/test.csv",
+        help="Path to CSV file with sentences to paraphrase",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="results/mistral_paraphrase_baseline",
+        help="Directory to save results",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit number of sentences to process (for testing)",
+    )
+    
+    args = parser.parse_args()
+    
+    process_csv(args.csv_path, args.output_dir, args.limit)
 
 
 if __name__ == "__main__":
-    args = build_parser().parse_args()
-    run_baseline(
-        test_file=args.test_file,
-        output_dir=args.output_dir,
-        model_name=args.model,
-        modes=args.modes,
-        examples_per_combo=args.examples_per_combo,
-        positive_only=not args.all_labels,
-        limit=args.limit,
-        max_new_tokens=args.max_new_tokens,
-        temperature=args.temperature,
-        top_p=args.top_p,
-        dtype=args.dtype,
-    )
+    main()
