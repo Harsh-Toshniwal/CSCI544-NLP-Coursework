@@ -1,122 +1,84 @@
 {
-  "CONSERVATIVE|SAME": [
-    {
-      "source": "Thiago is the father of current players Mazinho by Inter Milan and Rafinha of Bayern Munich",
-      "target": "Thiago is the father of current players Mazinho of Inter Milan and Rafinha of Bayern Munich",
-      "style_label": "CONSERVATIVE",
-      "length_label": "SAME"
-    },
-    {
-      "source": "The winning Mike McEwen team represented Ottawa at the 2016 Tim Hortons Brier in Manitoba",
-      "target": "The winning team from Mike McEwen represented Ottawa in the Tim Hortons Brier 2016 in Manitoba",
-      "style_label": "CONSERVATIVE",
-      "length_label": "SAME"
-    },
-    {
-      "source": "It was owned locally by Walter Stiles ' Albert M. Cadwell",
-      "target": "It was locally owned by Walter Stiles & Albert M. Cadwell",
-      "style_label": "CONSERVATIVE",
-      "length_label": "SAME"
-    }
-  ],
   "CREATIVE|SAME": [
     {
-      "source": "\" Sidewalk \" magazine helped to create the careers of characters such as Olly Todd  John Rattray  Stuart Graham  Benny Fairfax  Brian Sumner and more",
-      "target": "\" Sidewalk \" Magazine has helped spawn the careers of characters such as Brian Sumner  Benny Fairfax  Olly Todd  John Rattray  Stuart Graham and more",
+      "source": "Kristoffer had eight known children together with Karen",
+      "target": "Together  Karen and Kristoffer have eight children",
       "style_label": "CREATIVE",
-      "length_label": "SAME"
+      "length_label": "SAME",
+      "token_overlap_ratio": 0.5,
+      "length_ratio": 0.875
     },
     {
-      "source": "Susannah Louisa Barnett married Lorenzo Giuntini on 11 September 1866 in Frome  Somerset and had 8 children",
-      "target": "Louisa Barnett married Lorenzo Giuntini in Frome  Somerset on 11 September 1866 and got 8 children",
+      "source": "For the first time  Stephen Hendry won the title and defeated Peter Ebdon 9-8 in the final",
+      "target": "Stephen Hendry won the title for the first time  beating Peter Ebdon 9 - 8 in the final",
       "style_label": "CREATIVE",
-      "length_label": "SAME"
+      "length_label": "SAME",
+      "token_overlap_ratio": 0.631578947368421,
+      "length_ratio": 1.0588235294117647
     },
     {
-      "source": "Both traced the continuing influence on literary and cultural studies of the kinds of cultural materialism developed by Williams and his successors",
-      "target": "Both highlighted the continuing influence of the forms of cultural materialism developed by Williams and his successors on literary and cultural studies",
+      "source": "Karen and Kristoffer together have eight children",
+      "target": "Together with Karen  Kristoffer had eight children",
       "style_label": "CREATIVE",
-      "length_label": "SAME"
-    }
-  ],
-  "CREATIVE|SHORT": [
-    {
-      "source": "It was produced by Cameron Crain  Richard Shelgren and Kamala Lopez and directed by Kamala Lopez",
-      "target": "Kamala Lopez directed and produced by Cameron Crain  Richard Shelgren and Kamala Lopez",
-      "style_label": "CREATIVE",
-      "length_label": "SHORT"
-    },
-    {
-      "source": "Petina Gappah was born in the province of Copperbelt in Zambia",
-      "target": "Petina Gappah was born in Zambia  Copperbelt province",
-      "style_label": "CREATIVE",
-      "length_label": "SHORT"
-    },
-    {
-      "source": "Houyan is a station on Line 3 of the Dalian Metro in Liaoning Province  China  It is located in the Ganjingzi District of Dalian City",
-      "target": "Houyan is a station on Dalian Metro line 3 in the province of Liaoning  China  in the Ganjingzi district of Dalian",
-      "style_label": "CREATIVE",
-      "length_label": "SHORT"
-    }
-  ],
-  "CONSERVATIVE|SHORT": [
-    {
-      "source": "Several publications published by the Public Health Service have shown that veterans have increased rates of cancer  and nerve  respiratory  skin  and digestive disorders",
-      "target": "Several publications of the Public Health Service have shown that veterans have increased cancer  nerve  respiratory  skin and digestive disorders",
-      "style_label": "CONSERVATIVE",
-      "length_label": "SHORT"
-    },
-    {
-      "source": "On the other hand  many democrats feared an industrialization that welcomed the whigs",
-      "target": "On the other hand  many Democrats feared industrialization the Whigs welcomed",
-      "style_label": "CONSERVATIVE",
-      "length_label": "SHORT"
-    },
-    {
-      "source": "Talagang Tehsil  is a subdivision ( Tehsil  of the district of Chakwal in the province of Punjab in Pakistan",
-      "target": "Talagang Tehsil  is a subdivision ( tehsil  of Chakwal District in the Punjab province of Pakistan",
-      "style_label": "CONSERVATIVE",
-      "length_label": "SHORT"
+      "length_label": "SAME",
+      "token_overlap_ratio": 0.5555555555555556,
+      "length_ratio": 1.0
     }
   ],
   "CONSERVATIVE|LONG": [
     {
-      "source": "The Limbăşelu River is a tributary of the Cenușeroaia River in Romania",
-      "target": "The river LimbÄ Å elu is a tributary of the River Cenué eroaia in Romania",
+      "source": "His elder siblings were Patricia Lou ( 1925 born   Travis ( 1927-2016  and Larry ( 1929-2008",
+      "target": "His elder siblings were Patricia Lou ( born in 1925   Travis ( 1927 - 2016   and Larry ( 1929 - 2008",
       "style_label": "CONSERVATIVE",
-      "length_label": "LONG"
-    },
-    {
-      "source": "It is ( covered  by the integument  superficial fascia  Platysma and deep fascia",
-      "target": "It is ( covered  by the integument  the superficial fascia  the platysma and deep fascia",
-      "style_label": "CONSERVATIVE",
-      "length_label": "LONG"
-    },
-    {
-      "source": "It is found only in Yunnan and its tributaries in Lake Dianchi  China",
-      "target": "It is only found in Yunnan and its tributaries in the Dianchi - Lake  China",
-      "style_label": "CONSERVATIVE",
-      "length_label": "LONG"
+      "length_label": "LONG",
+      "token_overlap_ratio": 0.6,
+      "length_ratio": 1.3125
     }
   ],
   "CREATIVE|LONG": [
     {
-      "source": "If  as I believe  it was necessary  it was right and moral",
-      "target": "If it was necessary  as I now believe  then it was right and moral",
+      "source": "Hlynur is by nature defensive  but harmless",
+      "target": "The Hlynur is defensive by nature  but harmless. \"",
       "style_label": "CREATIVE",
-      "length_label": "LONG"
+      "length_label": "LONG",
+      "token_overlap_ratio": 0.6,
+      "length_ratio": 1.2857142857142858
+    }
+  ],
+  "CONSERVATIVE|SAME": [
+    {
+      "source": "Together with Karen  Kristoffer had eight children",
+      "target": "Together  Karen and Kristoffer have eight children",
+      "style_label": "CONSERVATIVE",
+      "length_label": "SAME",
+      "token_overlap_ratio": 0.5555555555555556,
+      "length_ratio": 1.0
     },
     {
-      "source": "Another way to regulate deer population is to control the birth rate",
-      "target": "Another way to control the population of deers is to regulate the birth rate",
-      "style_label": "CREATIVE",
-      "length_label": "LONG"
+      "source": "He quickly served in the U  \u0002. Navy and enlisted from 1942 - 1943",
+      "target": "He served quickly in the U  \u0002. Navy and joined from 1942-1943",
+      "style_label": "CONSERVATIVE",
+      "length_label": "SAME",
+      "token_overlap_ratio": 0.625,
+      "length_ratio": 0.8571428571428571
     },
     {
-      "source": "From the west end of the bridge  Pennsylvania Route 268 leads south to Parker and north to Emlenton",
-      "target": "The Pennsylvania Route 268 leads from the west end of the bridge south to Parker and to the north to Emlenton",
+      "source": "The reigning monarch is given if the date is not known more precisely. \"",
+      "target": "The ruling monarch is given if the date is not more precisely known",
+      "style_label": "CONSERVATIVE",
+      "length_label": "SAME",
+      "token_overlap_ratio": 0.6428571428571429,
+      "length_ratio": 0.9285714285714286
+    }
+  ],
+  "CREATIVE|SHORT": [
+    {
+      "source": "Ruth Stuber married Armand L. Jeanne ( b  1941",
+      "target": "Armand Jeanne married Ruth Stuber in 1941",
       "style_label": "CREATIVE",
-      "length_label": "LONG"
+      "length_label": "SHORT",
+      "token_overlap_ratio": 0.6,
+      "length_ratio": 0.7777777777777778
     }
   ]
 }
