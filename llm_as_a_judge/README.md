@@ -1,13 +1,13 @@
 # LLM-as-a-Judge for Paraphrase Evaluation
 
-This project uses an LLM to evaluate how good a paraphrase is.
+This project uses an LLM to evaluate paraphrases.
 
-Given a sentence pair, the model rates:
-- Semantic Equivalence (meaning preserved?)
-- Fluency (natural and grammatical?)
-- Diversity (how different is the wording?)
+For each sentence pair, it scores:
+- Semantic Equivalence
+- Fluency
+- Diversity
 
-Each is scored from 1–5, along with a short explanation.
+Each score is from 1-5, along with a short explanation.
 
 ---
 
@@ -15,57 +15,76 @@ Each is scored from 1–5, along with a short explanation.
 
 project/
 ├── main.py  
-├── paraphrase_pairs.csv  
-├── llm_judge_results.csv  
-├── .env  
-└── requirements.txt  
+├── analysis.py  
+├── *_predictions.csv  
+├── *_llm_results.csv  
+├── requirements.txt  
+└── .env  
 
 ---
 
-## Input Format
+## Input
 
-paraphrase_pairs.csv
+CSV with columns:
 
-sentence1,sentence2,gold_label  
-How can I learn Python fast?,What is the quickest way to learn Python?,1  
+source,prediction  
 
 ---
 
-## Output Format
+## Output
 
-llm_judge_results.csv
+CSV with columns:
 
-sentence1,sentence2,llm_semantic_equivalence,llm_fluency,llm_diversity,llm_justification  
+source,prediction,llm_semantic_equivalence,llm_fluency,llm_diversity,llm_justification  
 
 ---
 
 ## How to Run
 
-1. Open project in VS Code terminal (Ctrl + `)
+1. Create environment  
+python -m venv judge_env  
 
-2. Create environment:
-python -m venv judge_env
+2. Activate (Windows PowerShell)  
+.\judge_env\Scripts\Activate  
 
-3. Activate environment (Windows PowerShell):
-.\judge_env\Scripts\Activate
+3. Install dependencies  
+pip install -r requirements.txt  
 
-4. Install dependencies:
-pip install -r requirements.txt
+4. Add API key in `.env`  
+OPENAI_API_KEY=your_api_key_here  
 
-5. Create `.env` file:
-OPENAI_API_KEY=your_api_key_here
+5. Run  
+python main.py  
 
-6. Run:
-python main.py
+6. Analyze  
+python analysis.py  
 
 ---
 
 ## Config
 
-In main.py:
-run_csv_pipeline(limit=10)
+In `main.py`:
 
-- limit=10 → runs only 10 rows (safe)
-- set to None → runs full dataset
+run_csv_pipeline(
+    input_csv="your_file.csv",
+    output_csv="your_output.csv",
+    source_col="source",
+    candidate_col="prediction",
+    limit=50
+)
+
+limit controls how many rows are processed.
 
 ---
+
+## Analysis
+
+In `analysis.py`, set the filenames in the `files` dictionary:
+
+files = {
+    "Model Name": "your_results.csv",
+}
+
+Then run:
+
+python analysis.py
